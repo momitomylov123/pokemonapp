@@ -12,7 +12,6 @@ async def main(page: ft.Page):
 
     selected_file_path = {"path": None}
 
-    # --- Controles de UI ---
     url_field = ft.TextField(
         label="IP del servidor",
         value="192.168.68.106",
@@ -29,6 +28,7 @@ async def main(page: ft.Page):
     )
 
     img_preview = ft.Image(
+        src="https://via.placeholder.com/1",
         width=200,
         height=200,
         fit="contain",
@@ -37,7 +37,6 @@ async def main(page: ft.Page):
 
     result_column = ft.Column(visible=False, horizontal_alignment="center")
 
-    # --- File Picker ---
     picker = ft.FilePicker()
     page.overlay.append(picker)
 
@@ -61,7 +60,6 @@ async def main(page: ft.Page):
             allowed_extensions=["jpg", "jpeg", "png", "webp"],
         )
 
-    # --- Enviar al servidor ---
     async def send_to_server(e):
         file_path = selected_file_path.get("path")
         if not file_path:
@@ -99,7 +97,6 @@ async def main(page: ft.Page):
             rarity = data.get("rarity", {})
             rarity_label = rarity.get("label", "BASICO")
             rarity_color = rarity.get("color", "#9E9E9E")
-            stars = rarity.get("stars", 1)
 
             result_column.controls = [
                 ft.Container(
@@ -178,7 +175,6 @@ async def main(page: ft.Page):
             send_btn.disabled = False
         page.update()
 
-    # --- Ver mazo ---
     async def show_deck(e):
         ip = url_field.value.strip()
         base_url = f"http://{ip}:8000"
@@ -218,39 +214,34 @@ async def main(page: ft.Page):
             status.color = "#C62828"
         page.update()
 
-    # --- Botones ---
-    btn_pick = ft.ElevatedButton(
+    btn_pick = ft.Button(
         "Seleccionar Imagen",
         icon=ft.Icons.IMAGE,
         on_click=pick_image,
-        bgcolor="#3949AB",
-        color="white",
+        style=ft.ButtonStyle(bgcolor="#3949AB", color="white"),
         width=300,
         height=48,
     )
 
-    send_btn = ft.ElevatedButton(
+    send_btn = ft.Button(
         "Enviar al servidor",
         icon=ft.Icons.SEND,
         disabled=True,
         on_click=send_to_server,
-        bgcolor="#43A047",
-        color="white",
+        style=ft.ButtonStyle(bgcolor="#43A047", color="white"),
         width=300,
         height=48,
     )
 
-    btn_deck = ft.ElevatedButton(
+    btn_deck = ft.Button(
         "Ver Mazo",
         icon=ft.Icons.COLLECTIONS,
         on_click=show_deck,
-        bgcolor="#6A1B9A",
-        color="white",
+        style=ft.ButtonStyle(bgcolor="#6A1B9A", color="white"),
         width=300,
         height=48,
     )
 
-    # --- Layout ---
     page.add(
         ft.Container(height=10),
         ft.Text("PokeDraw", size=32, weight="bold", color="#1A237E"),
