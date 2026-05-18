@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+
+# APK output
+client/build/apk/
+client/build/flutter/build/
+
+# Flet build cache
+client/build/.hash/
+
+# Uploads
+server/uploads/
+
+# Config
+pokedraw_config.json
+
+# IDE
+.vscode/
+.idea/
