@@ -1,55 +1,24 @@
 import flet as ft
 import httpx
-import os
-import json
-
-# Archivo para guardar la configuracion del servidor
-CONFIG_FILE = "pokedraw_config.json"
-
-
-def load_config():
-    try:
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, "r") as f:
-                return json.load(f)
-    except Exception:
-        pass
-    return {"server_url": "http://192.168.1.1:8000"}
-
-
-def save_config(config):
-    try:
-        with open(CONFIG_FILE, "w") as f:
-            json.dump(config, f)
-    except Exception:
-        pass
 
 
 async def main(page: ft.Page):
     page.title = "PokeDraw"
-    page.theme_mode = ft.ThemeMode.LIGHT
+    page.theme_mode = "light"
     page.padding = 10
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.horizontal_alignment = "center"
     page.bgcolor = "#E8EAF6"
-    page.scroll = ft.ScrollMode.AUTO
-
-    config = load_config()
-    server_url = config.get("server_url", "http://192.168.1.1:8000")
+    page.scroll = "auto"
 
     selected_file_path = {"path": None}
 
     # --- Controles de UI ---
-
-    # Campo para la URL del servidor
     url_field = ft.TextField(
-        label="IP del servidor (Arduino UNO Q)",
-        value=server_url,
-        prefix_text="http://",
-        suffix_text=":8000",
-        hint_text="192.168.1.100",
-        width=320,
+        label="IP del servidor",
+        value="192.168.68.106",
+        hint_text="Ej: 192.168.1.100",
+        width=300,
         text_size=14,
-        border_color="#3949AB",
     )
 
     status = ft.Text(
@@ -57,23 +26,20 @@ async def main(page: ft.Page):
         color="#5C6BC0",
         size=14,
         italic=True,
-        text_align=ft.TextAlign.CENTER,
     )
 
     img_preview = ft.Image(
-        src=None,
         width=200,
         height=200,
-        fit=ft.ImageFit.CONTAIN,
+        fit="contain",
         visible=False,
-        border_radius=ft.border_radius.all(10),
     )
 
-    result_container = ft.Container(visible=False)
+    result_column = ft.Column(visible=False, horizontal_alignment="center")
 
     # --- File Picker ---
     picker = ft.FilePicker()
-    page.services.append(picker)
+    page.overlay.append(picker)
 
     def on_file_picked(e: ft.FilePickerResultEvent):
         if e.files:
@@ -93,7 +59,6 @@ async def main(page: ft.Page):
     def pick_image(e):
         picker.pick_files(
             allowed_extensions=["jpg", "jpeg", "png", "webp"],
-            dialog_title="Elegir imagen del dibujo",
         )
 
     # --- Enviar al servidor ---
@@ -105,18 +70,10 @@ async def main(page: ft.Page):
             page.update()
             return
 
-        # Construir URL del servidor
-        raw_url = url_field.value.strip()
-        if raw_url.startswith("http://") or raw_url.startswith("https://"):
-            base_url = raw_url.rstrip("/")
-        else:
-            base_url = f"http://{raw_url}:8000"
-
-        # Guardar config
-        save_config({"server_url": raw_url})
+        ip = url_field.value.strip()
+        base_url = f"http://{ip}:8000"
 
         send_btn.disabled = True
-        send_btn.text = "Procesando..."
         status.value = "Conectando con la IA..."
         status.color = "#1565C0"
         page.update()
@@ -144,145 +101,120 @@ async def main(page: ft.Page):
             rarity_color = rarity.get("color", "#9E9E9E")
             stars = rarity.get("stars", 1)
 
-            star_text = "".join(["*" for _ in range(stars)])
-
-            result_container.content = ft.Container(
-                content=ft.Column(
-                    [
-                        ft.Text(
-                            pokemon_name.upper(),
-                            size=28,
-                            weight=ft.FontWeight.BOLD,
-                            color="#1A237E",
-                            text_align=ft.TextAlign.CENTER,
-                        ),
-                        ft.Container(
-                            content=ft.Text(
-                                rarity_label,
-                                size=14,
-                                weight=ft.FontWeight.BOLD,
-                                color="white",
-                                text_align=ft.TextAlign.CENTER,
+            result_column.controls = [
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Text(
+                                pokemon_name.upper(),
+                                size=28,
+                                weight="bold",
+                                color="#1A237E",
                             ),
-                            bgcolor=rarity_color,
-                            padding=ft.padding.symmetric(horizontal=12, vertical=4),
-                            border_radius=ft.border_radius.all(12),
-                        ),
-                        ft.Divider(height=1),
-                        ft.Row(
-                            [
-                                ft.Column(
-                                    [
-                                        ft.Text("HP", size=12, color="#757575"),
-                                        ft.Text(
-                                            str(hp),
-                                            size=24,
-                                            weight=ft.FontWeight.BOLD,
-                                            color="#C62828",
-                                        ),
-                                    ],
-                                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                            ft.Container(
+                                content=ft.Text(
+                                    rarity_label,
+                                    size=14,
+                                    weight="bold",
+                                    color="white",
                                 ),
-                                ft.Column(
-                                    [
-                                        ft.Text("ATK", size=12, color="#757575"),
-                                        ft.Text(
-                                            str(attack),
-                                            size=24,
-                                            weight=ft.FontWeight.BOLD,
-                                            color="#E65100",
-                                        ),
-                                    ],
-                                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                                ),
-                                ft.Column(
-                                    [
-                                        ft.Text("Similitud", size=12, color="#757575"),
-                                        ft.Text(
-                                            f"{similarity * 100:.1f}%",
-                                            size=24,
-                                            weight=ft.FontWeight.BOLD,
-                                            color="#1565C0",
-                                        ),
-                                    ],
-                                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                                ),
-                            ],
-                            alignment=ft.MainAxisAlignment.SPACE_EVENLY,
-                        ),
-                    ],
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    spacing=8,
-                ),
-                padding=20,
-                bgcolor="white",
-                border_radius=ft.border_radius.all(16),
-                border=ft.border.all(2, rarity_color),
-                width=320,
-            )
-            result_container.visible = True
-
+                                bgcolor=rarity_color,
+                                padding=ft.padding.symmetric(horizontal=12, vertical=4),
+                                border_radius=12,
+                            ),
+                            ft.Divider(height=1),
+                            ft.Row(
+                                [
+                                    ft.Column(
+                                        [
+                                            ft.Text("HP", size=12, color="#757575"),
+                                            ft.Text(str(hp), size=24, weight="bold", color="#C62828"),
+                                        ],
+                                        horizontal_alignment="center",
+                                    ),
+                                    ft.Column(
+                                        [
+                                            ft.Text("ATK", size=12, color="#757575"),
+                                            ft.Text(str(attack), size=24, weight="bold", color="#E65100"),
+                                        ],
+                                        horizontal_alignment="center",
+                                    ),
+                                    ft.Column(
+                                        [
+                                            ft.Text("Similitud", size=12, color="#757575"),
+                                            ft.Text(
+                                                f"{similarity * 100:.1f}%",
+                                                size=24,
+                                                weight="bold",
+                                                color="#1565C0",
+                                            ),
+                                        ],
+                                        horizontal_alignment="center",
+                                    ),
+                                ],
+                                alignment="spaceEvenly",
+                            ),
+                        ],
+                        horizontal_alignment="center",
+                        spacing=8,
+                    ),
+                    padding=20,
+                    bgcolor="white",
+                    border_radius=16,
+                    border=ft.border.all(2, rarity_color),
+                    width=320,
+                )
+            ]
+            result_column.visible = True
             status.value = "Carta creada!"
             status.color = "#2E7D32"
 
-        except httpx.ConnectError:
-            status.value = "No se pudo conectar al servidor. Verifica la IP."
-            status.color = "#C62828"
-            result_container.visible = False
-        except httpx.TimeoutException:
-            status.value = "Tiempo agotado. El servidor tarda mucho."
-            status.color = "#C62828"
-            result_container.visible = False
         except Exception as ex:
-            error_msg = str(ex)[:50]
+            error_msg = str(ex)[:60]
             status.value = f"Error: {error_msg}"
             status.color = "#C62828"
-            result_container.visible = False
+            result_column.visible = False
         finally:
             send_btn.disabled = False
-            send_btn.text = "Enviar al servidor"
         page.update()
 
     # --- Ver mazo ---
     async def show_deck(e):
-        raw_url = url_field.value.strip()
-        if raw_url.startswith("http://") or raw_url.startswith("https://"):
-            base_url = raw_url.rstrip("/")
-        else:
-            base_url = f"http://{raw_url}:8000"
+        ip = url_field.value.strip()
+        base_url = f"http://{ip}:8000"
 
         try:
             async with httpx.AsyncClient() as client:
                 resp = await client.get(f"{base_url}/deck", timeout=10.0)
             cards = resp.json().get("cards", [])
 
-            card_items = []
+            card_texts = []
             for c in cards[-10:]:
                 name = c.get("pokemon", "???")
                 hp_val = c.get("hp", 0)
                 atk_val = c.get("attack", 0)
                 sim_val = c.get("similarity", 0)
-                card_items.append(
+                card_texts.append(
                     ft.Text(
                         f"{name.upper()} - HP:{hp_val} ATK:{atk_val} ({sim_val*100:.0f}%)",
                         size=13,
                     )
                 )
 
-            if not card_items:
-                card_items.append(ft.Text("No hay cartas todavia.", italic=True))
+            if not card_texts:
+                card_texts.append(ft.Text("No hay cartas todavia.", italic=True))
 
             dlg = ft.AlertDialog(
                 title=ft.Text(f"Tu Mazo ({len(cards)} cartas)"),
-                content=ft.Column(card_items, tight=True, scroll=ft.ScrollMode.AUTO, height=300),
+                content=ft.Column(card_texts, tight=True, scroll="auto", height=300),
                 actions=[
-                    ft.TextButton("Cerrar", on_click=lambda _: page.close_dialog()),
+                    ft.TextButton("Cerrar", on_click=lambda _: page.close(dlg)),
                 ],
             )
             page.open(dlg)
 
         except Exception as ex:
-            status.value = f"Error al cargar mazo: {str(ex)[:30]}"
+            status.value = f"Error mazo: {str(ex)[:30]}"
             status.color = "#C62828"
         page.update()
 
@@ -321,19 +253,8 @@ async def main(page: ft.Page):
     # --- Layout ---
     page.add(
         ft.Container(height=10),
-        ft.Text(
-            "PokeDraw",
-            size=32,
-            weight=ft.FontWeight.BOLD,
-            color="#1A237E",
-            text_align=ft.TextAlign.CENTER,
-        ),
-        ft.Text(
-            "Dibuja un Pokemon y descubri cual es!",
-            size=14,
-            color="#5C6BC0",
-            text_align=ft.TextAlign.CENTER,
-        ),
+        ft.Text("PokeDraw", size=32, weight="bold", color="#1A237E"),
+        ft.Text("Dibuja un Pokemon y descubri cual es!", size=14, color="#5C6BC0"),
         ft.Divider(height=20),
         url_field,
         ft.Container(height=10),
@@ -343,7 +264,7 @@ async def main(page: ft.Page):
         ft.Container(height=5),
         status,
         ft.Container(height=10),
-        result_container,
+        result_column,
         ft.Divider(height=20),
         btn_deck,
         ft.Container(height=20),
