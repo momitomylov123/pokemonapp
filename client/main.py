@@ -109,9 +109,7 @@ async def main(page: ft.Page):
                                     color="white",
                                 ),
                                 bgcolor=rarity_color,
-                                padding=ft.padding.symmetric(
-                                    horizontal=12, vertical=4
-                                ),
+                                padding=ft.Padding(left=12, top=4, right=12, bottom=4),
                                 border_radius=12,
                             ),
                             ft.Divider(height=1),
