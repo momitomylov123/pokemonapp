@@ -107,7 +107,7 @@ async def upload_drawing(file: UploadFile = File(...)):
 
         best_idx = similarity_scores.argmax().item()
         best_pokemon = POKEMON_DATA[best_idx]
-        probs = torch.softmax(similarity_scores * 10, dim=0)
+        probs = torch.softmax(similarity_scores * 75, dim=0)
         similarity_pct = round(probs[best_idx].item(), 4)
 
         hp = int(similarity_pct * 150 + 50)
