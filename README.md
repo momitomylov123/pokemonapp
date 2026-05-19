@@ -56,69 +56,82 @@ El APK se genera en `client/build/apk/pokedraw.apk`.
 3. Si pide permiso para instalar apps desconocidas, aceptar
 4. Instalar la app
 
-## Paso 2: Configurar el servidor en Arduino UNO Q
+## Paso 2: Configurar el servidor en Arduino UNO Q (con PuTTY)
 
-### Conectarse a la placa
+### 2.1 Conectar la placa
 
-```bash
-# Conectar via PuTTY (Windows) usando SSH
-# Host: IP de la placa (ver abajo como encontrarla)
-# Puerto: 22
-# Usuario/Password: los que configuraste en la placa
+1. Conecta la Arduino UNO Q a tu router con cable Ethernet o configurale el WiFi
+2. Conecta la placa a la corriente con el cable USB-C
+3. Espera 1-2 minutos a que arranque
+
+### 2.2 Encontrar la IP de la placa
+
+Desde tu PC Windows, abri CMD y escribi:
 ```
+ping arduinoq.local
+```
+Si no funciona, fijate en tu router la lista de dispositivos conectados para ver la IP de la placa.
 
-### Instalar dependencias en la placa
+### 2.3 Conectarse con PuTTY
+
+1. Abri PuTTY
+2. En **Host Name**: pone la IP de la placa (ej: `192.168.1.105`)
+3. En **Port**: deja `22`
+4. En **Connection type**: selecciona `SSH`
+5. Toca **Open**
+6. Si te sale una advertencia de seguridad, toca **Accept**
+7. Escribi el **usuario** de la placa (generalmente `arduino` o `root`)
+8. Escribi la **contraseña** de la placa
+
+### 2.4 Instalar el servidor (copiar estos comandos uno por uno en PuTTY)
 
 ```bash
 # 1. Actualizar el sistema
 sudo apt update && sudo apt upgrade -y
 
-# 2. Instalar Python y pip
+# 2. Instalar Python y herramientas necesarias
 sudo apt install -y python3 python3-pip python3-venv git
 
-# 3. Clonar el proyecto
+# 3. Descargar el proyecto desde GitHub
 git clone https://github.com/momitomylov123/pokemonapp.git
 cd pokemonapp
 
-# 4. Crear entorno virtual
+# 4. Crear entorno virtual de Python
 python3 -m venv venv
 source venv/bin/activate
 
-# 5. Instalar dependencias (version CPU para Arduino UNO Q)
+# 5. Instalar dependencias (version CPU, sin GPU)
 pip install --extra-index-url https://download.pytorch.org/whl/cpu \
-    fastapi==0.115.0 \
-    uvicorn[standard]==0.30.0 \
-    python-multipart==0.0.9 \
-    torch==2.1.1+cpu \
-    torchvision==0.16.1+cpu \
-    transformers==4.35.2 \
-    pillow==10.1.0
+    fastapi uvicorn[standard] python-multipart \
+    torch torchvision transformers pillow
 
-# 6. Iniciar el servidor
+# 6. Iniciar el servidor (la primera vez descarga el modelo, tarda ~10min)
 cd server
 python3 main.py
 ```
 
-El servidor va a imprimir:
+Cuando veas esto, el servidor esta listo:
 ```
-Cargando modelo CLIP (descarga ~600MB la primera vez)...
 Modelo listo.
 INFO:     Uvicorn running on http://0.0.0.0:8000
 ```
 
-### Encontrar la IP de la placa
+### 2.5 Ver la IP de la placa (para ponerla en la app)
 
+En la terminal de PuTTY, abri otra sesion o presiona Ctrl+C para parar el servidor, y escribi:
 ```bash
-# En la terminal de la placa:
 hostname -I
 ```
+Te va a mostrar algo como `192.168.1.105`. Esa IP la pones en la app del celular.
 
-Eso te da la IP (ej: `192.168.1.105`). Esa IP la pones en la app del celular.
+Para volver a iniciar el servidor:
+```bash
+cd ~/pokemonapp && source venv/bin/activate && cd server && python3 main.py
+```
 
-### Iniciar el servidor automaticamente al prender la placa
+### 2.6 (Opcional) Que el servidor arranque solo cuando prendas la placa
 
 ```bash
-# Crear un servicio systemd
 sudo tee /etc/systemd/system/pokedraw.service << EOF
 [Unit]
 Description=PokeDraw AI Server
@@ -136,12 +149,11 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-# Activar el servicio
 sudo systemctl daemon-reload
 sudo systemctl enable pokedraw.service
 sudo systemctl start pokedraw.service
 
-# Verificar que esta corriendo
+# Verificar que esta corriendo:
 sudo systemctl status pokedraw.service
 ```
 
