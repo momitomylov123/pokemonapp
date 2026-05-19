@@ -213,12 +213,37 @@ async def main(page: ft.Page):
                     hp_val = c.get("hp", 0)
                     atk_val = c.get("attack", 0)
                     sim_val = c.get("similarity", 0)
+                    img_file = c.get("image", "")
+                    img_url = f"{base_url}/images/{img_file}" if img_file else ""
+
+                    card_row_items = []
+                    if img_url:
+                        card_row_items.append(
+                            ft.Image(
+                                src=img_url,
+                                width=50,
+                                height=50,
+                                fit="contain",
+                                border_radius=6,
+                            )
+                        )
+                    card_row_items.append(
+                        ft.Column(
+                            [
+                                ft.Text(name.upper(), size=14, weight="bold"),
+                                ft.Text(
+                                    f"HP:{hp_val}  ATK:{atk_val}  ({sim_val*100:.0f}%)",
+                                    size=12,
+                                    color="#555555",
+                                ),
+                            ],
+                            spacing=2,
+                        )
+                    )
+
                     deck_items.append(
                         ft.Container(
-                            content=ft.Text(
-                                f"{name.upper()} - HP:{hp_val} ATK:{atk_val} ({sim_val*100:.0f}%)",
-                                size=13,
-                            ),
+                            content=ft.Row(card_row_items, spacing=10),
                             bgcolor="#F3E5F5",
                             padding=8,
                             border_radius=8,
