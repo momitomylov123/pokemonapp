@@ -36,6 +36,7 @@ async def main(page: ft.Page):
     )
 
     result_column = ft.Column(visible=False, horizontal_alignment="center")
+    deck_column = ft.Column(visible=False, horizontal_alignment="center", spacing=6)
 
     async def pick_image(e):
         files = await ft.FilePicker().pick_files(
@@ -194,32 +195,40 @@ async def main(page: ft.Page):
                 resp = await client.get(f"{base_url}/deck", timeout=10.0)
             cards = resp.json().get("cards", [])
 
-            card_texts = []
-            for c in cards[-10:]:
-                name = c.get("pokemon", "???")
-                hp_val = c.get("hp", 0)
-                atk_val = c.get("attack", 0)
-                sim_val = c.get("similarity", 0)
-                card_texts.append(
-                    ft.Text(
-                        f"{name.upper()} - HP:{hp_val} ATK:{atk_val} ({sim_val*100:.0f}%)",
-                        size=13,
-                    )
+            deck_items = []
+            deck_items.append(
+                ft.Text(
+                    f"Tu Mazo ({len(cards)} cartas)",
+                    size=20,
+                    weight="bold",
+                    color="#4A148C",
                 )
-
-            if not card_texts:
-                card_texts.append(ft.Text("No hay cartas todavia.", italic=True))
-
-            dlg = ft.AlertDialog(
-                title=ft.Text(f"Tu Mazo ({len(cards)} cartas)"),
-                content=ft.Column(
-                    card_texts, tight=True, scroll="auto", height=300
-                ),
-                actions=[
-                    ft.TextButton("Cerrar", on_click=lambda _: page.close(dlg)),
-                ],
             )
-            page.open(dlg)
+
+            if not cards:
+                deck_items.append(ft.Text("No hay cartas todavia.", italic=True))
+            else:
+                for c in cards[-10:]:
+                    name = c.get("pokemon", "???")
+                    hp_val = c.get("hp", 0)
+                    atk_val = c.get("attack", 0)
+                    sim_val = c.get("similarity", 0)
+                    deck_items.append(
+                        ft.Container(
+                            content=ft.Text(
+                                f"{name.upper()} - HP:{hp_val} ATK:{atk_val} ({sim_val*100:.0f}%)",
+                                size=13,
+                            ),
+                            bgcolor="#F3E5F5",
+                            padding=8,
+                            border_radius=8,
+                        )
+                    )
+
+            deck_column.controls = deck_items
+            deck_column.visible = True
+            status.value = f"Mostrando {len(cards)} cartas"
+            status.color = "#6A1B9A"
 
         except Exception as ex:
             status.value = f"Error mazo: {str(ex)[:30]}"
@@ -270,6 +279,8 @@ async def main(page: ft.Page):
         result_column,
         ft.Divider(height=20),
         btn_deck,
+        ft.Container(height=10),
+        deck_column,
         ft.Container(height=20),
     )
 
