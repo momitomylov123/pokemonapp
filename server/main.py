@@ -58,7 +58,8 @@ POKEMON_DATA = [
 pokemon_texts = [p["desc"] for p in POKEMON_DATA]
 text_inputs = processor(text=pokemon_texts, return_tensors="pt", padding=True)
 with torch.no_grad():
-    text_features = model.get_text_features(**text_inputs)
+    text_out = model.get_text_features(**text_inputs)
+    text_features = text_out if isinstance(text_out, torch.Tensor) else text_out.pooler_output
     text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
 
@@ -101,7 +102,8 @@ async def upload_drawing(file: UploadFile = File(...)):
         image_inputs = processor(images=img, return_tensors="pt")
 
         with torch.no_grad():
-            image_features = model.get_image_features(**image_inputs)
+            img_out = model.get_image_features(**image_inputs)
+            image_features = img_out if isinstance(img_out, torch.Tensor) else img_out.pooler_output
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
             similarity_scores = (image_features @ text_features.T).squeeze()
 
