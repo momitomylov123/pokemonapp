@@ -163,7 +163,12 @@ async def main(page: ft.Page):
                     padding=20,
                     bgcolor="white",
                     border_radius=16,
-                    border=ft.border.all(2, rarity_color),
+                    border=ft.Border(
+                        left=ft.BorderSide(2, rarity_color),
+                        top=ft.BorderSide(2, rarity_color),
+                        right=ft.BorderSide(2, rarity_color),
+                        bottom=ft.BorderSide(2, rarity_color),
+                    ),
                     width=320,
                 )
             ]
